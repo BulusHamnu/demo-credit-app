@@ -1,0 +1,35 @@
+{
+  "name": "demo-credit-mvp-app",
+  "version": "1.0.0",
+  "description": "Bulus Hamnu's lendsqr Demo credit test app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx --watch src/server.ts",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BulusHamnu/demo-credit-mvp-app.git"
+  },
+  "keywords": [],
+  "author": "Bulus Hamnu",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/BulusHamnu/demo-credit-mvp-app/issues"
+  },
+  "homepage": "https://github.com/BulusHamnu/demo-credit-mvp-app#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "knex": "^3.1.0",
+    "mysql2": "^3.15.3",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.5",
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6"
+  }
+}

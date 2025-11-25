@@ -3,6 +3,7 @@ import { type ApiResponse } from "../types/apiTypes.js";
 import {
   fundWallet,
   getUserTransactions,
+  tranferToWallet,
 } from "../services/transactions.service.js";
 import type { Transactions } from "../services/transactions.service.js";
 import AppError from "../errors/appError.js";
@@ -60,3 +61,31 @@ export const getTransactionsController = async (
   }
 };
 
+//
+export const transferController = async (
+  req: Request<
+    {},
+    ApiResponse<void>,
+    { amount: number; address: string; notes: string },
+    {}
+  >,
+  res: Response<ApiResponse<void>>,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = req.user!;
+    const { amount, address, notes } = req.body;
+    if (!amount || !address)
+      throw new AppError("Missing required field: amount or address.", 400);
+
+    await tranferToWallet(amount, address, notes, user.id);
+    const response: ApiResponse<void> = {
+      status: true,
+      message: "Transfer was successful.",
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};

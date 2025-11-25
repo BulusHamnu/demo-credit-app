@@ -68,3 +68,61 @@ export const getUserTransactions = async (
 
   return transactions;
 };
+
+// Transfer service
+export const tranferToWallet = async (
+  amount: number,
+  address: string,
+  notes: string = "",
+  user_id: number
+): Promise<boolean> => {
+  const senderWallet: Wallet = await db("wallets")
+    .where({ user_id: user_id })
+    .first();
+
+  if (!senderWallet) throw new AppError("No wallet found.", 404);
+
+  // check if user have enough credit
+  if (Number(senderWallet.balance) < Number(amount)) {
+    throw new AppError("insufficient balance.", 400);
+  }
+
+  await db.transaction(async (trx) => {
+    const receiverWallet: Wallet = await trx("wallets")
+      .where({ address })
+      .first();
+
+    if (!receiverWallet) {
+      throw new AppError(`Wallet ${address} was not found`, 404);
+    }
+
+    // check if both party wallet are the same
+    if (senderWallet.id === receiverWallet.id) {
+      throw new AppError("You can not transfer to youself.", 400);
+    }
+
+    await trx("wallets")
+      .where({ address: senderWallet.address })
+      .decrement("balance", amount);
+    await trx("wallets")
+      .where({ address: receiverWallet.address })
+      .increment("balance", amount);
+
+    const reference = generateTransactionReference();
+    // record transaction
+    await trx("transactions").insert({
+      amount,
+      receiver_wallet_id: receiverWallet.id,
+      sender_wallet_id: senderWallet.id,
+      type: "transfer",
+      notes: notes || "",
+      reference,
+      initiated_by: user_id,
+    });
+  });
+
+  console.log(
+    `Transfer of :${amount} by: ${user_id} to wallet: ${address} was successful.`
+  );
+  return true;
+};

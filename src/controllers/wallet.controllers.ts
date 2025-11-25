@@ -51,7 +51,7 @@ export const getUserWalletController = async (
       .where({ user_id: user?.id })
       .first();
 
-    if (!wallet) throw new AppError("No wallet was found for this user.", 404);
+    if (!wallet) throw new AppError("No wallet.", 404);
 
     const response: ApiResponse<Wallet> = {
       status: true,

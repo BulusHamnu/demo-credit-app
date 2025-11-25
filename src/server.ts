@@ -3,6 +3,7 @@ import { PORT } from "./config/env.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import authRoutes from "./routes/auth.routes.js";
 import walletRoutes from "./routes/wallet.routes.js";
+import transactionRoutes from "./routes/transaction.routes.js";
 const app = express();
 
 // middlewares
@@ -14,6 +15,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 app.use("/api", authRoutes);
 app.use("/api", walletRoutes);
+app.use("/api", transactionRoutes);
 
 // error handler
 app.use(errorHandler);

@@ -7,7 +7,7 @@ import {
 } from "../config/env.js";
 import axios from "axios";
 
-interface User {
+export interface User {
   id: number;
   full_name: string;
   email: string;

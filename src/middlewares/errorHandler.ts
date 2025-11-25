@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { type ApiResponse } from "../apiTypes.js";
+import { type ApiResponse } from "../types/apiTypes.js";
 import AppError from "../errors/appError.js";
 
 const errorHandler = async (

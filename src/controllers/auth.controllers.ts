@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { type ApiResponse } from "../apiTypes.js";
+import { type ApiResponse } from "../types/apiTypes.js";
 import { createNewUser, getUser } from "../services/auth.service.js";
 import AppError from "../errors/appError.js";
 

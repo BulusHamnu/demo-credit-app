@@ -1,14 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
 import { type ApiResponse } from "../types/apiTypes.js";
 import {
-  fundWallet,
+  transferFunds,
   getUserTransactions,
   tranferToWallet,
 } from "../services/transactions.service.js";
 import type { Transactions } from "../services/transactions.service.js";
 import AppError from "../errors/appError.js";
 
-//
+// Deposit to wallet controller
 export const depositController = async (
   req: Request<
     {},
@@ -26,7 +26,7 @@ export const depositController = async (
     if (!amount || !address)
       throw new AppError("Missing required field: amount or address.", 400);
 
-    await fundWallet(amount, address, notes, user.id);
+    await transferFunds(amount, address, "deposit", user.id);
 
     const response: ApiResponse<void> = {
       status: true,
@@ -39,7 +39,7 @@ export const depositController = async (
   }
 };
 
-//
+// Get all user's transaction controller
 export const getTransactionsController = async (
   req: Request<{}, ApiResponse<Transactions>, {}, {}>,
   res: Response<ApiResponse<Transactions>>,
@@ -61,7 +61,7 @@ export const getTransactionsController = async (
   }
 };
 
-//
+// transfer  controller
 export const transferController = async (
   req: Request<
     {},
@@ -85,6 +85,31 @@ export const transferController = async (
     };
 
     res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Withdraw controller
+export const withdrawController = async (
+  req: Request<{}, ApiResponse<void>, { amount: number; address: string }, {}>,
+  res: Response<ApiResponse<void>>,
+  next: NextFunction
+): Promise<void> => {
+  const user = req.user!;
+  const { amount, address } = req.body;
+  if (!amount || !address)
+    throw new AppError("Missing required field: amount or address.", 400);
+
+  await transferFunds(amount, address, "withdrawal", user.id);
+
+  const response: ApiResponse<void> = {
+    status: true,
+    message: "Withdrawal was successfully.",
+  };
+
+  res.status(200).json(response);
+  try {
   } catch (error) {
     next(error);
   }

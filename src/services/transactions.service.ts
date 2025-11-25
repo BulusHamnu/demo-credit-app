@@ -27,21 +27,35 @@ export interface Transaction {
   created_at: Date;
 }
 
-// Fund user's wallet service
-export const fundWallet = async (
+// Deposit and Withdrawal service
+export const transferFunds = async (
   amount: number,
   address: string,
-  notes: string = "",
+  type: string,
   user_id: number
 ): Promise<boolean> => {
   await db.transaction(async (trx) => {
-    const wallet: Wallet = await trx("wallets").where({ address }).first();
+    const wallet: Wallet = await trx("wallets")
+      .where({ address, user_id })
+      .first();
 
     if (!wallet) {
       throw new AppError("Wallet not found", 404);
     }
 
-    await trx("wallets").where({ address }).increment("balance", amount);
+    if (type === "deposit") {
+      await trx("wallets")
+        .where({ address, user_id })
+        .increment("balance", amount);
+    } else if (type === "withdrawal") {
+      if (Number(wallet.balance) < Number(amount))
+        throw new AppError("insufficient balance.", 400);
+      await trx("wallets")
+        .where({ address, user_id })
+        .decrement("balance", amount);
+    } else {
+      throw new AppError("Internal server error.", 500);
+    }
 
     const reference = generateTransactionReference();
     // record transaction
@@ -49,7 +63,7 @@ export const fundWallet = async (
       amount,
       receiver_wallet_id: wallet.id,
       type: "deposit",
-      notes: notes || "",
+      notes: "",
       reference,
       initiated_by: user_id,
     });

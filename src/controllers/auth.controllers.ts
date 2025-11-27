@@ -12,7 +12,7 @@ export const registerController = async (
     const { email, full_name } = req.body;
 
     if (!email || !full_name)
-      new AppError("Missing required field: full_name and email.", 404);
+      throw new AppError("Missing required field: full_name and email.", 404);
 
     await createNewUser(email, full_name);
     const response: ApiResponse<void> = {
@@ -33,7 +33,7 @@ export const loginController = async (
 ): Promise<void> => {
   try {
     const { email } = req.body;
-    if (!email) new AppError("Missing required field: email.", 400);
+    if (!email) throw new AppError("Missing required field: email.", 400);
 
     const { token } = await getUser(email);
 

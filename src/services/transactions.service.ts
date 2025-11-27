@@ -62,7 +62,7 @@ export const transferFunds = async (
     await trx("transactions").insert({
       amount,
       receiver_wallet_id: wallet.id,
-      type: "deposit",
+      type,
       notes: "",
       reference,
       initiated_by: user_id,

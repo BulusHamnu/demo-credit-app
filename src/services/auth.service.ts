@@ -16,12 +16,12 @@ export const createNewUser = async (
   email: string,
   full_name: string
 ): Promise<void> => {
+  const userExist = await db("users").where({ email }).first();
+  if (userExist) throw new AppError("User already exist.", 409);
+
   // check if user is blacklisted
   const userIsClean = await verifyKarmaIdentity(email);
   if (userIsClean) throw new AppError("You can not use this service.", 400);
-
-  const userExist = await db("users").where({ email }).first();
-  if (userExist) throw new AppError("User already exist.", 409);
 
   const token = generateAccessToken(); // get access token
   const [id] = await db("users").insert({ email, full_name, token });

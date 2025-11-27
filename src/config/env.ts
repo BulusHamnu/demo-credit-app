@@ -19,7 +19,7 @@ const env: Env = {
   ADJUSTOR_API_BASE: "https://adjutor.lendsqr.com/v2",
   DEMO_CREDIT_ADJUSTOR_API_KEY: process.env.DEMO_CREDIT_ADJUSTOR_API_KEY || "",
   DEMO_CREDIT_ADJUSTOR_ID: process.env.DEMO_CREDIT_ADJUSTOR_ID || "",
-  DATABASE_HOST: process.env.DATABASE_URL || "127.0.0.1",
+  DATABASE_HOST: process.env.DATABASE_HOST || "127.0.0.1",
   DATABASE_ADMIN: process.env.DATABASE_ADMIN || "root",
   DATABASE_NAME: process.env.DATABASE_NAME || "lendsqr_wallet",
   DATABASE_PORT: process.env.DATABASE_PORT || 3306,

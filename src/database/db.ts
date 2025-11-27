@@ -1,14 +1,20 @@
 import knex from "knex";
-import { DATABASE_PASSWORD } from "../config/env.js";
+import {
+  DATABASE_PASSWORD,
+  DATABASE_HOST,
+  DATABASE_ADMIN,
+  DATABASE_NAME,
+  DATABASE_PORT,
+} from "../config/env.js";
 
 const db = knex({
   client: "mysql2",
   connection: {
-    host: "127.0.0.1",
-    port: 3306,
-    user: "root",
+    host: DATABASE_HOST,
+    port: DATABASE_PORT as number,
+    user: DATABASE_ADMIN,
     password: DATABASE_PASSWORD,
-    database: "lendsqr_wallet",
+    database: DATABASE_NAME,
   },
 });
 

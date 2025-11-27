@@ -96,20 +96,20 @@ export const withdrawController = async (
   res: Response<ApiResponse<void>>,
   next: NextFunction
 ): Promise<void> => {
-  const user = req.user!;
-  const { amount, address } = req.body;
-  if (!amount || !address)
-    throw new AppError("Missing required field: amount or address.", 400);
-
-  await transferFunds(amount, address, "withdrawal", user.id);
-
-  const response: ApiResponse<void> = {
-    status: true,
-    message: "Withdrawal was successfully.",
-  };
-
-  res.status(200).json(response);
   try {
+    const user = req.user!;
+    const { amount, address } = req.body;
+    if (!amount || !address)
+      throw new AppError("Missing required field: amount or address.", 400);
+
+    await transferFunds(amount, address, "withdrawal", user.id);
+
+    const response: ApiResponse<void> = {
+      status: true,
+      message: "Withdrawal was successfully.",
+    };
+
+    res.status(200).json(response);
   } catch (error) {
     next(error);
   }

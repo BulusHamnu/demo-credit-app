@@ -4,6 +4,7 @@ import errorHandler from "./middlewares/errorHandler.js";
 import authRoutes from "./routes/auth.routes.js";
 import walletRoutes from "./routes/wallet.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
+import { intiateDb } from "./database/db.js";
 const app = express();
 
 // middlewares
@@ -21,6 +22,7 @@ app.use("/api", transactionRoutes);
 app.use(errorHandler);
 
 // start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  await intiateDb();
   console.log(`Server started and runing on 127.0.0.1:${PORT}`);
 });

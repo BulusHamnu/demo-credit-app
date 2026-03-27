@@ -9,6 +9,8 @@ dist
 rest-test.rest
 # npm chache
 .npm
+# random note file
+notes.md
 
 
 

@@ -1,7 +1,7 @@
 {
   "name": "demo-credit-mvp-app",
   "version": "1.0.0",
-  "description": "Bulus Hamnu's lendsqr Demo credit test app",
+  "description": "Bulus Hamnu's lendsqr assessment - Demo Credit App",
   "main": "index.js",
   "scripts": {
     "dev": "tsx --watch src/server.ts",

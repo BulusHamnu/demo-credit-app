@@ -36,7 +36,7 @@ export const createNewUser = async (
       token,
     });
   } catch (error: any) {
-    if (error.code === "ER_DUP_ENTRY")
+    if (error.errno === 1062)
       throw new AppError(
         ErrorCodes.USER_ALREADY_EXISTS,
         "User already exists.",

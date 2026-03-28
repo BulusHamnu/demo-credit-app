@@ -1,32 +1,57 @@
 import type { NextFunction, Request, Response } from "express";
 import { type ApiResponse } from "../types/apiTypes.js";
-import {
-  transferFunds,
-  getUserTransactions,
-  tranferToWallet,
-} from "../services/transactions.service.js";
+import * as transactionService from "../services/transactions.service.js";
 import type { Transactions } from "../services/transactions.service.js";
-import AppError from "../errors/appError.js";
+import AppError, { ErrorCodes } from "../errors/appError.js";
 
-// Deposit to wallet controller
-export const depositController = async (
-  req: Request<
-    {},
-    ApiResponse<void>,
-    { amount: number; address: string; notes: string },
-    {}
-  >,
+interface reqBody {
+  amount: number;
+  address: string;
+  notes?: string;
+}
+// Beware i know how to use Joi & Zoi this is just an example.
+function validateTransactionBody(body: reqBody) {
+  const requiredFields = ["amount", "address"];
+  const error: {
+    [key: string]: string;
+  } = {};
+
+  const reqFields = Object.keys(body);
+  for (const key of requiredFields) {
+    if (!reqFields.includes(key)) {
+      error[key] = `${key} is required.`;
+    }
+  }
+
+  if (Object.keys(error).length > 0) {
+    throw new AppError(
+      ErrorCodes.VALIDATION_ERROR,
+      "Missing required field.",
+      400,
+      true,
+      error,
+    );
+  }
+
+  return body;
+}
+
+/* Deposit to wallet handler */
+export const depositFunds = async (
+  req: Request<{}, ApiResponse<void>, reqBody, {}>,
   res: Response<ApiResponse<void>>,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const user = req.user!;
-    const { amount, address, notes } = req.body;
+    const { amount, address, notes } = validateTransactionBody(req.body);
 
-    if (!amount || !address)
-      throw new AppError("Missing required field: amount or address.", 400);
-
-    await transferFunds(amount, address, "deposit", user.id);
+    await transactionService.depositFundsToWallet(
+      amount,
+      address,
+      user.id,
+      notes,
+    );
 
     const response: ApiResponse<void> = {
       status: true,
@@ -39,16 +64,45 @@ export const depositController = async (
   }
 };
 
-// Get all user's transaction controller
-export const getTransactionsController = async (
+/* Withdrawal handler */
+export const withdrawFunds = async (
+  req: Request<{}, ApiResponse<void>, reqBody, {}>,
+  res: Response<ApiResponse<void>>,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const user = req.user!;
+    const { amount, address, notes } = validateTransactionBody(req.body);
+
+    await transactionService.withdrawFundsFromWallet(
+      amount,
+      address,
+      user.id,
+      notes,
+    );
+
+    const response: ApiResponse<void> = {
+      status: true,
+      message: `Withdrawal of ${amount} was successfully.`,
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/* Get user's transactions */
+export const getTransactions = async (
   req: Request<{}, ApiResponse<Transactions>, {}, {}>,
   res: Response<ApiResponse<Transactions>>,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const user = req.user!;
 
-    const transactions = await getUserTransactions(user.id);
+    const transactions = await transactionService.getUserTransactions(user.id);
+
     const response: ApiResponse<Transactions> = {
       status: true,
       message: "Transactions retrived successfully.",
@@ -61,52 +115,20 @@ export const getTransactionsController = async (
   }
 };
 
-// transfer  controller
-export const transferController = async (
-  req: Request<
-    {},
-    ApiResponse<void>,
-    { amount: number; address: string; notes: string },
-    {}
-  >,
+/* Transfer funds handler */
+export const transferFunds = async (
+  req: Request<{}, ApiResponse<void>, reqBody, {}>,
   res: Response<ApiResponse<void>>,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const user = req.user!;
-    const { amount, address, notes } = req.body;
-    if (!amount || !address)
-      throw new AppError("Missing required field: amount or address.", 400);
+    const { amount, address, notes } = validateTransactionBody(req.body);
 
-    await tranferToWallet(amount, address, notes, user.id);
+    await transactionService.tranferToWallet(amount, address, user.id, notes);
     const response: ApiResponse<void> = {
       status: true,
       message: "Transfer was successful.",
-    };
-
-    res.status(200).json(response);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Withdraw controller
-export const withdrawController = async (
-  req: Request<{}, ApiResponse<void>, { amount: number; address: string }, {}>,
-  res: Response<ApiResponse<void>>,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const user = req.user!;
-    const { amount, address } = req.body;
-    if (!amount || !address)
-      throw new AppError("Missing required field: amount or address.", 400);
-
-    await transferFunds(amount, address, "withdrawal", user.id);
-
-    const response: ApiResponse<void> = {
-      status: true,
-      message: "Withdrawal was successfully.",
     };
 
     res.status(200).json(response);

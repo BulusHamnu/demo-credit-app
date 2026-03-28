@@ -1,16 +1,23 @@
 import { Router } from "express";
 import withAuth from "../middlewares/withAuth.js";
-import {
-  depositController,
-  getTransactionsController,
-  transferController,
-  withdrawController,
-} from "../controllers/transaction.controllers.js";
+import * as transactionController from "../controllers/transaction.controllers.js";
 
 const router = Router();
-router.post("/transactions/deposit", withAuth, depositController);
-router.get("/transactions", withAuth, getTransactionsController);
-router.post("/transactions/transfer", withAuth, transferController);
-router.post("/transactions/withdraw", withAuth, withdrawController);
+router.post(
+  "/transactions/deposit",
+  withAuth,
+  transactionController.depositFunds,
+);
+router.get("/transactions", withAuth, transactionController.getTransactions);
+router.post(
+  "/transactions/transfer",
+  withAuth,
+  transactionController.transferFunds,
+);
+router.post(
+  "/transactions/withdraw",
+  withAuth,
+  transactionController.withdrawFunds,
+);
 
 export default router;

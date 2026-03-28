@@ -4,8 +4,9 @@ import {
 } from "../config/env.js";
 import axios from "axios";
 
+/* Karma identity lookup function */
 export default async function verifyKarmaIdentity(
-  identifier: string
+  identifier: string,
 ): Promise<boolean> {
   const endpoint = ADJUSTOR_API_BASE + "/verification/karma/" + identifier;
 

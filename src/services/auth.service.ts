@@ -1,6 +1,6 @@
 import db from "../database/db.js";
 import { generateAccessToken } from "../utils/helpers.js";
-import AppError from "../errors/appError.js";
+import AppError, { ErrorCodes } from "../errors/appError.js";
 import verifyKarmaIdentity from "./verifyKarmaIdentity.js";
 
 export interface User {
@@ -11,27 +11,57 @@ export interface User {
   created_at: Date;
 }
 
-// create new user service function
+/* Create new user function */
 export const createNewUser = async (
   email: string,
-  full_name: string
+  fullname: string,
 ): Promise<void> => {
-  const userExist = await db("users").where({ email }).first();
-  if (userExist) throw new AppError("User already exist.", 409);
+  // Users found in karma blacklist are not allowed to use this service.
+  const userIsClean = true; //await verifyKarmaIdentity(email);
+  if (!userIsClean)
+    throw new AppError(
+      ErrorCodes.USER_BLACKLISTED,
+      "You are not allow to use this service.",
+      400,
+      true,
+      null,
+    );
 
-  // check if user is blacklisted
-  const userIsClean = await verifyKarmaIdentity(email);
-  if (userIsClean) throw new AppError("You can not use this service.", 400);
+  const token = generateAccessToken();
+  let id = undefined;
+  try {
+    [id] = await db("users").insert({
+      email,
+      full_name: fullname,
+      token,
+    });
+  } catch (error: any) {
+    if (error.code === "ER_DUP_ENTRY")
+      throw new AppError(
+        ErrorCodes.USER_ALREADY_EXISTS,
+        "User already exists.",
+        409,
+        true,
+        { email },
+      );
 
-  const token = generateAccessToken(); // get access token
-  const [id] = await db("users").insert({ email, full_name, token });
+    throw error;
+  }
+
   console.log(`New user created - userid: ${id}`);
 };
 
-// get user service function
-export const getUser = async (email: string): Promise<User> => {
+/* Retrive user token function */
+export const retriveUserToken = async (email: string): Promise<string> => {
   const user: User = await db("users").where({ email }).first();
-  if (!user) throw new AppError("User does not exist", 404);
+  if (!user)
+    throw new AppError(
+      ErrorCodes.USER_NOT_FOUND,
+      "User does not exists.",
+      404,
+      true,
+      { email },
+    );
 
-  return user;
+  return user.token;
 };

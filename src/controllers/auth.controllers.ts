@@ -1,23 +1,32 @@
 import type { NextFunction, Request, Response } from "express";
 import { type ApiResponse } from "../types/apiTypes.js";
-import { createNewUser, getUser } from "../services/auth.service.js";
-import AppError from "../errors/appError.js";
+import * as authService from "../services/auth.service.js";
+import AppError, { ErrorCodes } from "../errors/appError.js";
 
-export const registerController = async (
-  req: Request<{}, ApiResponse<void>, { full_name: string; email: string }, {}>,
+export const signup = async (
+  req: Request<{}, ApiResponse<void>, { fullname: string; email: string }, {}>,
   res: Response<ApiResponse<void>>,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
-    const { email, full_name } = req.body;
+    const { email, fullname } = req.body;
 
-    if (!email || !full_name)
-      throw new AppError("Missing required field: full_name and email.", 404);
+    if (!email || !fullname)
+      throw new AppError(
+        ErrorCodes.VALIDATION_ERROR,
+        "Missing required fields.",
+        400,
+        true,
+        {
+          email: "email is required.",
+          full_name: "full_name is required.",
+        },
+      );
 
-    await createNewUser(email, full_name);
+    await authService.createNewUser(email, fullname);
     const response: ApiResponse<void> = {
       status: true,
-      message: "User created succesfully",
+      message: "User created succesfully.",
     };
 
     res.status(201).json(response);
@@ -26,26 +35,34 @@ export const registerController = async (
   }
 };
 
-export const loginController = async (
+export const login = async (
   req: Request<{}, ApiResponse<{ token: string }>, { email: string }, {}>,
   res: Response<ApiResponse<{ token: string }>>,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { email } = req.body;
-    if (!email) throw new AppError("Missing required field: email.", 400);
+    if (!email)
+      throw new AppError(
+        ErrorCodes.VALIDATION_ERROR,
+        "Missing required fields.",
+        400,
+        true,
+        {
+          email: "email is required.",
+        },
+      );
 
-    const { token } = await getUser(email);
-
+    const token = await authService.retriveUserToken(email);
     const response: ApiResponse<{ token: string }> = {
       status: true,
-      message: "User logged in succesfully",
+      message: "User logged in succesfully.",
       data: {
         token,
       },
     };
 
-    res.status(201).json(response);
+    res.status(200).json(response);
   } catch (error) {
     next(error);
   }

@@ -4,7 +4,6 @@ node_modules
 dist
 # enviromental variable
 .env
-.env.example
 # restclient test file
 rest-test.rest
 # npm chache

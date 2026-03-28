@@ -1,58 +1,48 @@
 import type { NextFunction, Request, Response } from "express";
 import { type ApiResponse } from "../types/apiTypes.js";
-import AppError from "../errors/appError.js";
-import db from "../database/db.js";
-import crypto from "crypto";
+import AppError, { ErrorCodes } from "../errors/appError.js";
+import { type Wallet } from "../services/wallet.service.js";
+import * as walletService from "../services/wallet.service.js";
 
-interface Wallet {
-  id: number;
-  balance: number;
-  address: string;
-  user_id: number;
-  created_at: Date;
-}
-
-export const createNewWalletController = async (
+/* Create wallet handler */
+export const createNewWallet = async (
   req: Request<{}, ApiResponse<void>, {}, {}>,
   res: Response<ApiResponse<void>>,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
-    const user = req.user;
-    const address = crypto.randomBytes(16).toString("hex");
+    const user = req.user!;
 
-    const walletExist: Wallet = await db("wallets")
-      .where({ user_id: user?.id })
-      .first();
-    if (walletExist) throw new AppError("User already have a wallet.", 409);
-
-    await db("wallets").insert({ user_id: user?.id, address });
-    console.log(`New wallet created for user: ${user?.id}`);
-
+    await walletService.createWallet(user.id);
     const response: ApiResponse<void> = {
       status: true,
-      message: "New wallet created successfully.",
+      message: "User wallet created successfully.",
     };
 
     res.status(201).json(response);
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === "ER_DUP_ENTRY") {
+      throw new AppError(
+        ErrorCodes.WALLET_ALREADY_EXISTS,
+        "User already have a wallet.",
+        409,
+        true,
+      );
+    }
     next(error);
   }
 };
 
-export const getUserWalletController = async (
+/* Get wallet handler */
+export const getWallet = async (
   req: Request<{}, ApiResponse<Wallet>, {}, {}>,
   res: Response<ApiResponse<Wallet>>,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
-    const user = req.user;
-    const wallet: Wallet = await db("wallets")
-      .where({ user_id: user?.id })
-      .first();
+    const user = req.user!;
 
-    if (!wallet) throw new AppError("No wallet.", 404);
-
+    const wallet = await walletService.getUserWallet(user.id);
     const response: ApiResponse<Wallet> = {
       status: true,
       message: "Wallet retrived successfully.",

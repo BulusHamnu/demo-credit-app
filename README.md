@@ -1,4 +1,4 @@
-# Demo-Credit-Mvp-App
+# Demo-Credit-App
 
 Bulus Hamnu's lendsqr Assessment Demo Credit App \
 This project is a backend wallet system built as part of a technical assessment for Lendsqr.
@@ -89,7 +89,7 @@ DATABASE_PORT=port_number
 - Run migrations
 
 ```bash
-npx knex migrate:latest --knexfile knexfile.js
+npm run migrate
 ```
 
 - Start development server
@@ -275,3 +275,122 @@ After going through the assessment again, I took time to review my approach and 
 
 - Made `initiated_by` **NOT NULL**
 - Made `reference` **UNIQUE** (for idempotency)
+
+---
+
+## Migrations
+
+- Added migration scripts to reflect all database changes
+- This ensures the schema is version-controlled and reproducible across environments
+
+---
+
+## Error Handling & Response Structure
+
+- Introduced a standardized error response format
+- Implemented a structured error system using `AppError`
+
+Each error now includes:
+
+- `code` → machine-readable error identifier
+- `message` → human-readable message
+- `details` → additional context
+
+Example:
+
+```json
+{
+  "status": false,
+  "message": "User already exists.",
+  "error": {
+    "code": "USER_ALREADY_EXISTS",
+    "details": {
+      "email": "hamnubulus88@gmail.com"
+    }
+  }
+}
+```
+
+---
+
+## Codebase Refactor
+
+- Refactored imports, function names, and response messages for consistency
+- Fixed minor issues such as incorrect status codes and typos
+- Improved overall readability and maintainability of the codebase
+
+---
+
+## Auth Service Improvements
+
+- Removed pre-check for existing users (which was vulnerable to race conditions)
+- Now attempts to create the user directly and handles duplicate key errors
+- Returns a standardized `USER_ALREADY_EXISTS` error when necessary
+- Refactored `retrieveUser` → `retrieveUserToken` to better reflect its responsibility
+
+---
+
+## Wallet Service Improvements
+
+- Leveraged the `UNIQUE(user_id)` constraint:
+  - Instead of checking first, the system now attempts creation and handles duplicate errors
+
+- This ensures correctness even under concurrent requests
+- Separated wallet creation and retrieval into a dedicated service for better structure
+
+---
+
+# Transaction Service Improvements
+
+- Refactored large functions into smaller, reusable units
+- Reduced duplication and improved clarity of logic
+
+#### Transaction Handling
+
+- Ensured only critical operations are wrapped in database transactions
+- Non-critical reads are performed outside transactions for clarity and efficiency
+
+#### Concurrency & Data Integrity
+
+- Introduced **row locking** for:
+  - withdrawals
+  - transfers
+
+This allows:
+
+- safe balance checks before updates
+
+- prevention of race conditions
+
+- Retained database constraint:
+  - `balance >= 0` as a safety net against invalid states
+
+This combination ensures:
+
+- correctness at the database level
+- consistency at the application level
+
+---
+
+### Notes
+
+- I did not modify the test suite in this iteration, as my focus was on improving core backend logic and data integrity
+- Pagination was not added to transaction retrieval, as it was not a primary requirement for this assessment
+
+---
+
+## Why I Documented This
+
+This was my first backend assessment, and it made me realize that backend engineering goes far beyond just CRUD operations.
+
+The system worked functionally, but I missed important aspects like data integrity, concurrency, and proper handling of financial logic. Failing the assessment helped me clearly see those gaps.
+
+Instead of moving on, I decided to go back, understand my mistakes, and improve the system step by step. This process helped me understand not just _what_ I got wrong, but _why_ it mattered.
+
+I documented these changes so I can:
+
+- track my learning progress
+- clearly understand my weak points
+- have something to revisit in the future
+
+This project marks an important point in my learning journey, where I started thinking more like a backend engineer rather than just building features.

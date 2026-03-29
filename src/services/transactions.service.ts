@@ -1,7 +1,6 @@
 import db from "../database/db.js";
 import AppError, { ErrorCodes } from "../errors/appError.js";
 import { generateTransactionReference } from "../utils/helpers.js";
-import { getUserWallet } from "./wallet.service.js";
 
 interface Wallet {
   id: number;
@@ -38,25 +37,6 @@ function validateAmount(amount: number) {
       true,
     );
   }
-}
-
-async function retriveUserWallet(
-  userId: number,
-  address: string,
-): Promise<Wallet> {
-  const wallet: Wallet = await db("wallets")
-    .where({ address, user_id: userId })
-    .first();
-
-  if (!wallet)
-    throw new AppError(
-      ErrorCodes.WALLET_NOT_FOUND,
-      "Wallet not found..",
-      404,
-      true,
-    );
-
-  return wallet;
 }
 
 async function recordTransaction({
@@ -96,7 +76,18 @@ export const depositFundsToWallet = async (
   notes: string = "",
 ) => {
   validateAmount(amount);
-  const wallet = await retriveUserWallet(userId, address);
+
+  const wallet: Wallet = await db("wallets")
+    .where({ address, user_id: userId })
+    .first();
+
+  if (!wallet)
+    throw new AppError(
+      ErrorCodes.WALLET_NOT_FOUND,
+      "Wallet not found..",
+      404,
+      true,
+    );
 
   await db.transaction(async (trx) => {
     await trx("wallets")
@@ -123,25 +114,33 @@ export const withdrawFundsFromWallet = async (
   notes: string = "",
 ) => {
   validateAmount(amount);
-  const wallet = await retriveUserWallet(userId, address);
 
   await db.transaction(async (trx) => {
-    try {
-      await trx("wallets")
-        .where({ address, user_id: userId })
-        .decrement("balance", amount);
-    } catch (error: any) {
-      if (error.errno === 4025) {
-        throw new AppError(
-          ErrorCodes.INSUFFICIENT_FUNDS,
-          "Insufficient funds",
-          400,
-          true,
-        );
-      }
-      //
-      throw error;
+    const wallet = await trx("wallets")
+      .where({ address, user_id: userId })
+      .forUpdate()
+      .first();
+
+    if (!wallet)
+      throw new AppError(
+        ErrorCodes.WALLET_NOT_FOUND,
+        "User does not have a wallet.",
+        404,
+        true,
+      );
+
+    if (wallet.balance < amount) {
+      throw new AppError(
+        ErrorCodes.INSUFFICIENT_FUNDS,
+        "Insufficient funds",
+        400,
+        true,
+      );
     }
+
+    await trx("wallets")
+      .where({ address, user_id: userId })
+      .decrement("balance", amount);
 
     await recordTransaction({
       db: trx,
@@ -164,19 +163,7 @@ export const tranferToWallet = async (
 ): Promise<void> => {
   validateAmount(amount);
 
-  const [senderWallet, receiverWallet]: [Wallet, Wallet] = await Promise.all([
-    await db("wallets").where({ user_id: userId }).first(),
-    await db("wallets").where({ address }).first(),
-  ]);
-
-  if (!senderWallet)
-    throw new AppError(
-      ErrorCodes.WALLET_NOT_FOUND,
-      "User does not have a wallet.",
-      404,
-      true,
-    );
-
+  const receiverWallet = await db("wallets").where({ address }).first();
   if (!receiverWallet) {
     throw new AppError(
       ErrorCodes.WALLET_NOT_FOUND,
@@ -186,34 +173,43 @@ export const tranferToWallet = async (
     );
   }
 
-  // User can not transfer to their self.
-  if (senderWallet.address === receiverWallet.address) {
-    throw new AppError(
-      ErrorCodes.TRANSFER_INVALID,
-      "You can not tranfer funds to yourself.",
-      400,
-      true,
-    );
-  }
-
   await db.transaction(async (trx) => {
-    try {
-      await trx("wallets")
-        .where({ address: senderWallet.address })
-        .decrement("balance", amount);
-    } catch (error: any) {
-      if (error.errno === 4025) {
-        throw new AppError(
-          ErrorCodes.INSUFFICIENT_FUNDS,
-          "User have insufficient balance.",
-          400,
-          true,
-        );
-      }
-      //
-      throw error;
+    const senderWallet = await trx("wallets")
+      .where({ user_id: userId })
+      .forUpdate()
+      .first();
+
+    if (!senderWallet)
+      throw new AppError(
+        ErrorCodes.WALLET_NOT_FOUND,
+        "User does not have a wallet.",
+        404,
+        true,
+      );
+
+    // User can not transfer to their self.
+    if (senderWallet.address === receiverWallet.address) {
+      throw new AppError(
+        ErrorCodes.TRANSFER_INVALID,
+        "You can not tranfer funds to yourself.",
+        400,
+        true,
+      );
     }
 
+    if (senderWallet.balance < amount) {
+      throw new AppError(
+        ErrorCodes.INSUFFICIENT_FUNDS,
+        "Insufficient funds",
+        400,
+        true,
+      );
+    }
+
+    await trx("wallets")
+      .where({ id: senderWallet.id })
+      .decrement("balance", amount);
+    //
     await trx("wallets")
       .where({ address: receiverWallet.address })
       .increment("balance", amount);

@@ -19,7 +19,7 @@ export const signup = async (
         true,
         {
           email: "email is required.",
-          full_name: "full_name is required.",
+          fullname: "fullname is required.",
         },
       );
 

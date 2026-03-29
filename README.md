@@ -63,7 +63,7 @@ The application uses three main tables: Users, Wallets, and Transactions.
 - Clone the Repository
 
 ```bash
-git clone https://github.com/BulusHamnu/demo-credit-mvp-app.git
+git clone https://github.com/BulusHamnu/demo-credit-app.git
 cd demo-credit-mvp-app
 ```
 
@@ -100,7 +100,7 @@ npm run dev
 
 ## Links:
 
-- [Github Repo](https://github.com/BulusHamnu/demo-credit-mvp-app)
+- [Github Repo](https://github.com/BulusHamnu/demo-credit-app)
 - [Live Preview](https://bulus-lendsqr-be-test.onrender.com)
 
 <br>

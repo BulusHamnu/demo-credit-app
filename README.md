@@ -44,19 +44,19 @@ The application uses three main tables: Users, Wallets, and Transactions.
 
 ### Wallet routes
 
-| Method | Endpoint       | Description                            |
-| ------ | -------------- | -------------------------------------- |
-| POST   | `/api/wallets` | Create a new wallet                    |
-| GET    | `/api/wallets` | Retrieve the user’s wallet and balance |
+| Method | Endpoint                | Description                            |
+| ------ | ----------------------- | -------------------------------------- |
+| POST   | `/api/wallets`          | Create a new wallet                    |
+| GET    | `/api/wallets`          | Retrieve the user’s wallet and balance |
+| POST   | `/api/wallets/deposit`  | Deposit funds into wallet              |
+| POST   | `/api/wallets/withdraw` | Withdraw funds from wallet             |
+| POST   | `/api/wallets/transfer` | Transfer funds to another wallet       |
 
 ### Transaction routes
 
-| Method | Endpoint                     | Description                      |
-| ------ | ---------------------------- | -------------------------------- |
-| POST   | `/api/transactions/deposit`  | Deposit funds into wallet        |
-| POST   | `/api/transactions/withdraw` | Withdraw funds from wallet       |
-| POST   | `/api/transactions/transfer` | Transfer funds to another wallet |
-| GET    | `/api/transactions`          | Get all user transactions        |
+| Method | Endpoint            | Description               |
+| ------ | ------------------- | ------------------------- |
+| GET    | `/api/transactions` | Get all user transactions |
 
 ## How to Run the Project Locally
 
@@ -333,42 +333,57 @@ Example:
 ## Wallet Service Improvements
 
 - Leveraged the `UNIQUE(user_id)` constraint:
-  - Instead of checking first, the system now attempts creation and handles duplicate errors
+  - Instead of pre-checking, the system now attempts wallet creation directly and handles duplicate key errors
+  - This ensures correctness even under concurrent requests
 
-- This ensures correctness even under concurrent requests
+- Refactored responsibilities:
+  - Wallet domain now handles **deposit, withdrawal, and transfer operations**
+  - Transaction domain is limited to **recording and retrieving transaction data**
+
 - Separated wallet creation and retrieval into a dedicated service for better structure
+
+- Refactored large functions into smaller, reusable units
+
+- Reduced duplication and improved clarity of logic
 
 ---
 
-# Transaction Service Improvements
-
-- Refactored large functions into smaller, reusable units
-- Reduced duplication and improved clarity of logic
-
-#### Transaction Handling
+### Transaction Handling
 
 - Ensured only critical operations are wrapped in database transactions
-- Non-critical reads are performed outside transactions for clarity and efficiency
+- Non-critical reads are performed outside transactions for better clarity and efficiency
 
-#### Concurrency & Data Integrity
+---
+
+### Concurrency & Data Integrity
 
 - Introduced **row locking** for:
   - withdrawals
   - transfers
 
-This allows:
+This ensures:
 
-- safe balance checks before updates
+- safe balance validation before updates
 
 - prevention of race conditions
 
 - Retained database constraint:
   - `balance >= 0` as a safety net against invalid states
 
-This combination ensures:
+This combination guarantees:
 
 - correctness at the database level
 - consistency at the application level
+
+---
+
+## Transaction Service Improvements
+
+- Transaction service is now strictly responsible for:
+  - creating transaction records
+  - retrieving transaction history
+
+- Business logic has been removed to maintain clear separation of concerns
 
 ---
 

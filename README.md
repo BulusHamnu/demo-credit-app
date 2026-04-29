@@ -103,6 +103,14 @@ npm run dev
 - [Github Repo](https://github.com/BulusHamnu/demo-credit-app)
 - [Live Preview](https://bulus-lendsqr-be-test.onrender.com)
 
+---
+
+### API Documentation
+
+Link: [Postman Documentation](https://documenter.getpostman.com/view/44782397/2sBXqDs3be)
+
+---
+
 <br>
 
 ## Lender Backend Assessment Aftermath

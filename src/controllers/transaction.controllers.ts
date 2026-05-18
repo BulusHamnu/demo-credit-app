@@ -16,7 +16,7 @@ export const getTransactions = async (
 
     const response: ApiResponse<Transactions> = {
       status: true,
-      message: "Transactions retrived successfully.",
+      message: "Transactions retrieved successfully.",
       data: transactions,
     };
 

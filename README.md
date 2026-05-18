@@ -27,6 +27,8 @@ Tech stack:
 
 Link: [Postman Documentation](https://documenter.getpostman.com/view/44782397/2sBXqDs3be)
 
+---
+
 ## Database schema design (Improved version)
 
 You can view the ERD diagram here:: [Database Design Diagram](https://dbdiagram.io/d/Demo-Credit-App-69c64721fb2db18e3b1b7bdc)

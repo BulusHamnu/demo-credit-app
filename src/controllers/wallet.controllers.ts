@@ -16,7 +16,7 @@ export const createNewWallet = async (
     await walletService.createWallet(user.id);
     const response: ApiResponse<void> = {
       status: true,
-      message: "User wallet created successfully.",
+      message: "Wallet created successfully.",
     };
 
     res.status(201).json(response);
@@ -29,6 +29,7 @@ export const createNewWallet = async (
         true,
       );
     }
+
     next(error);
   }
 };
@@ -45,7 +46,7 @@ export const getWallet = async (
     const wallet = await walletService.getUserWallet(user.id);
     const response: ApiResponse<Wallet> = {
       status: true,
-      message: "Wallet retrived successfully.",
+      message: "Wallet retrieved successfully.",
       data: wallet,
     };
 
@@ -55,7 +56,6 @@ export const getWallet = async (
   }
 };
 
-// Beware i know how to use Joi & Zoi this is just an example.
 interface reqBody {
   amount: number;
   address: string;

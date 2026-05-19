@@ -52,12 +52,12 @@ export const createNewUser = async (
 };
 
 /* Retrive user token function */
-export const retriveUserToken = async (email: string): Promise<string> => {
+export const retrieveUserToken = async (email: string): Promise<string> => {
   const user: User = await db("users").where({ email }).first();
   if (!user)
     throw new AppError(
       ErrorCodes.USER_NOT_FOUND,
-      "User does not exists.",
+      "User not found.",
       404,
       true,
       { email },

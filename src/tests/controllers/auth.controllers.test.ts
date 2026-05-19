@@ -1,126 +1,141 @@
-// import { vi, test, expect, describe } from "vitest";
+import { vi, test, expect, describe, beforeEach } from "vitest";
 
-// vi.mock("../../services/auth.service.js", () => ({
-//   createNewUser: vi.fn(),
-//   getUser: vi.fn(),
-// }));
+vi.mock("../../services/auth.service.js", () => ({
+  createNewUser: vi.fn(),
+  retrieveUserToken: vi.fn(),
+}));
 
-// import {
-//   registerController,
-//   loginController,
-// } from "../../../src/controllers/auth.controllers.js";
+import { signup, login } from "../../../src/controllers/auth.controllers.js";
 
-// import { createNewUser, getUser } from "../../../src/services/auth.service.js";
+import {
+  createNewUser,
+  retrieveUserToken,
+} from "../../../src/services/auth.service.js";
 
-// import AppError from "../../../src/errors/appError.js";
+import AppError from "../../errors/appError.js";
 
-// const mockedCreateUser = createNewUser as any;
-// const mockedGetUser = getUser as any;
+describe("Auth Controller Tests", () => {
+  let req: any;
+  let res: any;
+  let next: any;
 
-// describe("Auth Controller Tests", () => {
-//   test("Register: successful registration", async () => {
-//     mockedCreateUser.mockClear();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    req = {};
+    res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    next = vi.fn();
+  });
 
-//     const req: any = {
-//       body: {
-//         full_name: "Bulus Hamnu",
-//         email: "hamnu@gmail.com",
-//       },
-//     };
+  describe("Sign up func tests", () => {
+    test("Sign up successfully", async () => {
+      req = {
+        body: {
+          fullname: "Bulus Hamnu",
+          email: "hamnu@gmail.com",
+        },
+      };
 
-//     const json = vi.fn();
-//     const status = vi.fn(() => ({ json }));
-//     const res: any = { status };
-//     const next = vi.fn();
+      await signup(req, res, next);
 
-//     await registerController(req, res, next);
+      expect(createNewUser).toHaveBeenCalledWith(
+        "hamnu@gmail.com",
+        "Bulus Hamnu",
+      );
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith({
+        status: true,
+        message: "User created successfully.",
+      });
+      expect(next).not.toHaveBeenCalled();
+    });
 
-//     expect(mockedCreateUser).toHaveBeenCalledWith(
-//       "hamnu@gmail.com",
-//       "Bulus Hamnu",
-//     );
+    test("Missing required fields", async () => {
+      const req: any = {
+        body: {
+          fullname: "",
+          email: "",
+        },
+      };
 
-//     expect(status).toHaveBeenCalledWith(201);
-//     expect(json).toHaveBeenCalledWith({
-//       status: true,
-//       message: "User created succesfully",
-//     });
+      await signup(req, res, next);
 
-//     expect(next).not.toHaveBeenCalled();
-//   });
+      expect(createNewUser).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalled();
 
-//   test("Register: missing required fields", async () => {
-//     mockedCreateUser.mockClear();
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error.message).toBe("Missing required fields.");
+    });
 
-//     const req: any = {
-//       body: {
-//         full_name: "",
-//         email: "",
-//       },
-//     };
+    test("Should handle createNewUser func errors", async () => {
+      req.body = {
+        fullname: "Bulus",
+        email: "hamnu@gmail.com",
+      };
 
-//     const res: any = {};
-//     const next = vi.fn();
+      const userExistsError = new Error("User already exists.");
+      (createNewUser as any).mockRejectedValue(userExistsError);
 
-//     await registerController(req, res, next);
+      await signup(req, res, next);
+      expect(next).toHaveBeenCalledWith(userExistsError);
+    });
+  });
 
-//     expect(next).toHaveBeenCalled();
+  describe("Login func tests", async () => {
+    test("Login successfully", async () => {
+      (retrieveUserToken as any).mockResolvedValue(
+        "3153e291-926e-4319-8086-0221280c7d78",
+      );
 
-//     const error = (next as any).mock.calls[0][0];
-//     expect(error).toBeInstanceOf(AppError);
-//   });
+      const req: any = {
+        body: {
+          email: "hamnu@gmail.com",
+        },
+      };
 
-//   test("Login: successful", async () => {
-//     mockedGetUser.mockClear();
+      await login(req, res, next);
 
-//     mockedGetUser.mockResolvedValueOnce({
-//       token: "3153e291-926e-4319-8086-0221280c7d78",
-//     });
+      expect(retrieveUserToken).toHaveBeenCalledWith("hamnu@gmail.com");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        status: true,
+        message: "User logged in successfully.",
+        data: {
+          token: "3153e291-926e-4319-8086-0221280c7d78",
+        },
+      });
 
-//     const req: any = {
-//       body: {
-//         email: "hamnu@gmail.com",
-//       },
-//     };
+      expect(next).not.toHaveBeenCalled();
+    });
 
-//     const json = vi.fn();
-//     const status = vi.fn(() => ({ json }));
-//     const res: any = { status };
-//     const next = vi.fn();
+    test("Missing required field email", async () => {
+      const req: any = {
+        body: {
+          email: "",
+        },
+      };
 
-//     await loginController(req, res, next);
+      await login(req, res, next);
 
-//     expect(mockedGetUser).toHaveBeenCalledWith("hamnu@gmail.com");
+      expect(next).toHaveBeenCalled();
+      expect(retrieveUserToken).not.toHaveBeenCalled();
 
-//     expect(status).toHaveBeenCalledWith(201);
-//     expect(json).toHaveBeenCalledWith({
-//       status: true,
-//       message: "User logged in succesfully",
-//       data: {
-//         token: "3153e291-926e-4319-8086-0221280c7d78", // 3153e291-926e-4319-8086-0221280c7d78
-//       },
-//     });
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error.message).toBe("Missing required fields.");
+    });
 
-//     expect(next).not.toHaveBeenCalled();
-//   });
+    test("Should handle retrieveUserToken func errors", async () => {
+      req.body = {
+        fullname: "Bulus",
+        email: "hamnu@gmail.com",
+      };
 
-//   test("Login: missing email", async () => {
-//     mockedGetUser.mockClear();
+      const notFoundError = new Error("User not found.");
+      (retrieveUserToken as any).mockRejectedValue(notFoundError);
 
-//     const req: any = {
-//       body: {
-//         email: "",
-//       },
-//     };
-
-//     const res: any = {};
-//     const next = vi.fn();
-
-//     await loginController(req, res, next);
-
-//     expect(next).toHaveBeenCalled();
-
-//     const error = (next as any).mock.calls[0][0];
-//     expect(error).toBeInstanceOf(AppError);
-//   });
-// });
+      await login(req, res, next);
+      expect(next).toHaveBeenCalledWith(notFoundError);
+    });
+  });
+});

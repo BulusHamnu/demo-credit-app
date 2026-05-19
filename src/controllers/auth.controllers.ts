@@ -26,7 +26,7 @@ export const signup = async (
     await authService.createNewUser(email, fullname);
     const response: ApiResponse<void> = {
       status: true,
-      message: "User created succesfully.",
+      message: "User created successfully.",
     };
 
     res.status(201).json(response);
@@ -53,10 +53,10 @@ export const login = async (
         },
       );
 
-    const token = await authService.retriveUserToken(email);
+    const token = await authService.retrieveUserToken(email);
     const response: ApiResponse<{ token: string }> = {
       status: true,
-      message: "User logged in succesfully.",
+      message: "User logged in successfully.",
       data: {
         token,
       },

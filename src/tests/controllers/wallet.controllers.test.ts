@@ -1,145 +1,333 @@
-// import { vi, test, expect, describe } from "vitest";
+import { vi, test, expect, describe, beforeEach } from "vitest";
 
-// // mock db()
-// let mockWhere = vi.fn().mockReturnThis();
-// let mockFirst = vi.fn();
-// let mockInsert = vi.fn().mockResolvedValue([1]);
+vi.mock("../../services/wallet.service.js", () => ({
+  createWallet: vi.fn(),
+  getUserWallet: vi.fn(),
+  depositFundsToWallet: vi.fn(),
+  withdrawFundsFromWallet: vi.fn(),
+  tranferToWallet: vi.fn(),
+}));
 
-// vi.mock("../../database/db.js", () => {
-//   const fn: any = vi.fn(() => ({
-//     where: mockWhere,
-//     first: mockFirst,
-//     insert: mockInsert,
-//   }));
+import * as walletController from "../../controllers/wallet.controllers.js";
 
-//   return { default: fn };
-// });
+import * as walletService from "../../services/wallet.service.js";
+import AppError, { ErrorCodes } from "../../errors/appError.js";
 
-// const mockedDb = db as any;
+describe("Wallet controller tests", () => {
+  let req: any;
+  let res: any;
+  let next: any;
 
-// import {
-//   createNewWalletController,
-//   getUserWalletController,
-// } from "../../../src/controllers/wallet.controllers.js";
+  beforeEach(() => {
+    vi.clearAllMocks();
+    req = {};
+    res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    next = vi.fn();
+  });
 
-// import db from "../../../src/database/db.js";
-// import AppError from "../../../src/errors/appError.js";
-// import crypto from "crypto";
+  describe("Create new wallet func", () => {
+    test("Wallet created successfully", async () => {
+      const req: any = {
+        user: { id: 5 },
+      };
 
-// // mock crypto.randomBytes
-// vi.spyOn(crypto, "randomBytes").mockImplementation(() => ({
-//   toString: () => "8350a25d32394bbcb95464f73537c377",
-// }));
+      await walletController.createNewWallet(req, res, next);
 
-// describe("Wallet Controller Tests", () => {
-//   // Create wallet
-//   test("Create wallet: successful", async () => {
-//     mockWhere.mockClear();
-//     mockFirst.mockClear();
-//     mockInsert.mockClear();
+      expect(walletService.createWallet).toHaveBeenCalledWith(5);
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith({
+        status: true,
+        message: "Wallet created successfully.",
+      });
 
-//     mockFirst.mockResolvedValueOnce(undefined);
+      expect(next).not.toHaveBeenCalled();
+    });
 
-//     const req: any = {
-//       user: { id: 5 },
-//     };
+    test("Wallet already exists", async () => {
+      const req: any = {
+        user: { id: 5 },
+      };
 
-//     const json = vi.fn();
-//     const status = vi.fn(() => ({ json }));
-//     const res: any = { status };
-//     const next = vi.fn();
+      const dupError: any = new AppError(
+        ErrorCodes.WALLET_ALREADY_EXISTS,
+        "User already have a wallet.",
+        409,
+        true,
+      );
 
-//     await createNewWalletController(req, res, next);
+      (walletService.createWallet as any).mockRejectedValue(dupError);
 
-//     expect(mockedDb).toHaveBeenCalledWith("wallets");
-//     expect(mockWhere).toHaveBeenCalledWith({ user_id: 5 });
-//     expect(mockInsert).toHaveBeenCalledWith({
-//       user_id: 5,
-//       address: "8350a25d32394bbcb95464f73537c377",
-//     });
+      await walletController.createNewWallet(req, res, next);
 
-//     expect(status).toHaveBeenCalledWith(201);
-//     expect(json).toHaveBeenCalledWith({
-//       status: true,
-//       message: "New wallet created successfully.",
-//     });
+      expect(next).toHaveBeenCalledWith(dupError);
 
-//     expect(next).not.toHaveBeenCalled();
-//   });
+      expect(walletService.createWallet).toHaveBeenCalledWith(5);
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(dupError.message).toBe("User already have a wallet.");
+    });
+  });
 
-//   test("Create wallet: wallet exists", async () => {
-//     mockWhere.mockClear();
-//     mockFirst.mockClear();
+  describe("Get wallet func", () => {
+    test("Wallet retrieved successfully", async () => {
+      const req: any = {
+        user: { id: 5 },
+      };
 
-//     mockFirst.mockResolvedValueOnce({ id: 1 });
+      const wallet = {
+        id: 1,
+        balance: 5000,
+        user_id: 5,
+      };
 
-//     const req: any = {
-//       user: { id: 5 },
-//     };
+      (walletService.getUserWallet as any).mockResolvedValue(wallet);
 
-//     const res: any = {};
-//     const next = vi.fn();
+      await walletController.getWallet(req, res, next);
 
-//     await createNewWalletController(req, res, next);
+      expect(walletService.getUserWallet).toHaveBeenCalledWith(5);
 
-//     expect(next).toHaveBeenCalled();
-//     const error = (next as any).mock.calls[0][0];
-//     expect(error).toBeInstanceOf(AppError);
-//   });
+      expect(res.status).toHaveBeenCalledWith(200);
 
-//   // Get wallet
-//   test("Get user wallet: successful", async () => {
-//     mockWhere.mockClear();
-//     mockFirst.mockClear();
+      expect(res.json).toHaveBeenCalledWith({
+        status: true,
+        message: "Wallet retrieved successfully.",
+        data: wallet,
+      });
 
-//     mockFirst.mockResolvedValueOnce({
-//       id: 10,
-//       balance: 300,
-//       address: "us8350a25d32394bbcb95464f73537c377erwallet",
-//       user_id: 5,
-//     });
+      expect(next).not.toHaveBeenCalled();
+    });
 
-//     const req: any = {
-//       user: { id: 5 },
-//     };
+    test("Should handle get wallet errors", async () => {
+      const req: any = {
+        user: { id: 5 },
+      };
 
-//     const json = vi.fn();
-//     const status = vi.fn(() => ({ json }));
-//     const res: any = { status };
-//     const next = vi.fn();
+      const notFoundError = new AppError(
+        ErrorCodes.WALLET_NOT_FOUND,
+        "Wallet not found..",
+        404,
+        true,
+      );
 
-//     await getUserWalletController(req, res, next);
+      (walletService.getUserWallet as any).mockRejectedValue(notFoundError);
 
-//     expect(mockedDb).toHaveBeenCalledWith("wallets");
-//     expect(mockWhere).toHaveBeenCalledWith({ user_id: 5 });
+      await walletController.getWallet(req, res, next);
 
-//     expect(status).toHaveBeenCalledWith(200);
-//     expect(json).toHaveBeenCalledWith({
-//       status: true,
-//       message: "Wallet retrived successfully.",
-//       data: expect.any(Object),
-//     });
+      expect(walletService.getUserWallet).toHaveBeenCalledWith(5);
 
-//     expect(next).not.toHaveBeenCalled();
-//   });
+      expect(next).toHaveBeenCalledWith(notFoundError);
+    });
+  });
 
-//   test("Get user wallet no wallet", async () => {
-//     mockWhere.mockClear();
-//     mockFirst.mockClear();
+  describe("Deposit funds func", () => {
+    test("Deposit successfully", async () => {
+      const req: any = {
+        user: { id: 5 },
+        body: {
+          amount: 5000,
+          address: "3153e291-926e-4319-8086-0221280c7d78",
+          notes: "deposit note",
+        },
+      };
 
-//     mockFirst.mockResolvedValueOnce(undefined);
+      await walletController.depositFunds(req, res, next);
 
-//     const req: any = {
-//       user: { id: 5 },
-//     };
+      expect(walletService.depositFundsToWallet).toHaveBeenCalledWith(
+        5000,
+        "3153e291-926e-4319-8086-0221280c7d78",
+        5,
+        "deposit note",
+      );
 
-//     const res: any = {};
-//     const next = vi.fn();
+      expect(res.status).toHaveBeenCalledWith(200);
 
-//     await getUserWalletController(req, res, next);
+      expect(res.json).toHaveBeenCalledWith({
+        status: true,
+        message: "Deposit of 5000 was successful.",
+      });
 
-//     expect(next).toHaveBeenCalled();
-//     const error = (next as any).mock.calls[0][0];
-//     expect(error).toBeInstanceOf(AppError);
-//   });
-// });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    test("Missing required fields", async () => {
+      const req: any = {
+        user: { id: 5 },
+        body: {},
+      };
+
+      await walletController.depositFunds(req, res, next);
+
+      expect(walletService.depositFundsToWallet).not.toHaveBeenCalled();
+
+      expect(next).toHaveBeenCalled();
+
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error.message).toBe("Missing required fields.");
+    });
+
+    test("Should handle deposit errors", async () => {
+      const req: any = {
+        user: { id: 5 },
+        body: {
+          amount: 5000,
+          address: "wallet-address",
+        },
+      };
+
+      const walletNotFoundError = new AppError(
+        ErrorCodes.WALLET_NOT_FOUND,
+        "Wallet not found..",
+        404,
+        true,
+      );
+
+      (walletService.depositFundsToWallet as any).mockRejectedValue(
+        walletNotFoundError,
+      );
+
+      await walletController.depositFunds(req, res, next);
+      expect(next).toHaveBeenCalledWith(walletNotFoundError);
+    });
+  });
+
+  describe("Withdraw funds func", () => {
+    test("Withdrawal successfully", async () => {
+      const req: any = {
+        user: { id: 5 },
+        body: {
+          amount: 2000,
+          address: "3153e291-926e-4319-8086-0221280c7d78",
+          notes: "withdraw note",
+        },
+      };
+
+      await walletController.withdrawFunds(req, res, next);
+
+      expect(walletService.withdrawFundsFromWallet).toHaveBeenCalledWith(
+        2000,
+        "3153e291-926e-4319-8086-0221280c7d78",
+        5,
+        "withdraw note",
+      );
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        status: true,
+        message: "Withdrawal of 2000 was successfully.",
+      });
+
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    test("Missing required fields", async () => {
+      const req: any = {
+        user: { id: 5 },
+        body: {},
+      };
+
+      await walletController.withdrawFunds(req, res, next);
+
+      expect(walletService.withdrawFundsFromWallet).not.toHaveBeenCalled();
+
+      expect(next).toHaveBeenCalled();
+
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error.message).toBe("Missing required fields.");
+    });
+
+    test("Should handle withdrawal errors", async () => {
+      const req: any = {
+        user: { id: 5 },
+        body: {
+          amount: 2000,
+          address: "3153e291-926e-4319-8086-0221280c7d78",
+        },
+      };
+
+      const walletNotFound = new AppError(
+        ErrorCodes.WALLET_NOT_FOUND,
+        "Wallet not found.",
+        404,
+        true,
+      );
+
+      (walletService.withdrawFundsFromWallet as any).mockRejectedValue(
+        walletNotFound,
+      );
+
+      await walletController.withdrawFunds(req, res, next);
+      expect(next).toHaveBeenCalledWith(walletNotFound);
+    });
+  });
+
+  describe("Transfer funds func", () => {
+    test("Transfer successfully", async () => {
+      const req: any = {
+        user: { id: 5 },
+        body: {
+          amount: 1000,
+          address: "3153e291-926e-4319-8086-0221280c7d78",
+          notes: "transfer note",
+        },
+      };
+
+      await walletController.transferFunds(req, res, next);
+
+      expect(walletService.tranferToWallet).toHaveBeenCalledWith(
+        1000,
+        "3153e291-926e-4319-8086-0221280c7d78",
+        5,
+        "transfer note",
+      );
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        status: true,
+        message: "Transfer was successful.",
+      });
+
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    test("Missing required fields", async () => {
+      const req: any = {
+        user: { id: 5 },
+        body: {},
+      };
+
+      await walletController.transferFunds(req, res, next);
+
+      expect(walletService.tranferToWallet).not.toHaveBeenCalled();
+
+      expect(next).toHaveBeenCalled();
+
+      const error = (next as any).mock.calls[0][0];
+      expect(error).toBeInstanceOf(AppError);
+      expect(error.message).toBe("Missing required fields.");
+    });
+
+    test("Should handle transfer errors", async () => {
+      const req: any = {
+        user: { id: 5 },
+        body: {
+          amount: 1000,
+          address: "3153e291-926e-4319-8086-0221280c7d78",
+        },
+      };
+
+      const invalidTransfer = new AppError(
+        ErrorCodes.TRANSFER_INVALID,
+        "You can not tranfer funds to yourself.",
+        400,
+        true,
+      );
+
+      (walletService.tranferToWallet as any).mockRejectedValue(invalidTransfer);
+
+      await walletController.transferFunds(req, res, next);
+      expect(next).toHaveBeenCalledWith(invalidTransfer);
+    });
+  });
+});

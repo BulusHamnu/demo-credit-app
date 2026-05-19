@@ -1,20 +1,27 @@
-// import { test, expect, describe } from "vitest";
-// import {
-//   generateAccessToken,
-//   generateTransactionReference,
-// } from "../../../src/utils/helpers.js";
+import { describe, test, expect } from "vitest";
 
-// describe("Helper Functions test", () => {
-//   test("Generate Access Token", () => {
-//     const token = generateAccessToken();
-//     // token is a type of string
-//     expect(typeof token).toBe("string");
-//   });
+import {
+  generateAccessToken,
+  generateTransactionReference,
+} from "../../utils/helpers.js";
 
-//   test("Generate Transaction Reference", () => {
-//     const ref = generateTransactionReference();
-//     // returned a type of string
-//     expect(typeof ref).toBe("string");
-//     expect(ref).includes("TNX_");
-//   });
-// });
+describe("Generate token utils tests", () => {
+  describe("generateAccessToken func", () => {
+    test("Should generate access token", () => {
+      const token = generateAccessToken();
+
+      expect(typeof token).toBe("string");
+      expect(token.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("generateTransactionReference func", () => {
+    test("Should generate transaction reference", () => {
+      const reference = generateTransactionReference();
+
+      expect(typeof reference).toBe("string");
+      expect(reference.startsWith("TNX_")).toBe(true);
+      expect(reference.length).toBeGreaterThan(4);
+    });
+  });
+});

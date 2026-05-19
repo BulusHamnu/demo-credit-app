@@ -78,7 +78,7 @@ function validateRequestBody(body: reqBody) {
   if (Object.keys(error).length > 0) {
     throw new AppError(
       ErrorCodes.VALIDATION_ERROR,
-      "Missing required field.",
+      "Missing required fields.",
       400,
       true,
       error,

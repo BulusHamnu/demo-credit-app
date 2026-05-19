@@ -101,7 +101,7 @@ export const withdrawFundsFromWallet = async (
     if (!wallet)
       throw new AppError(
         ErrorCodes.WALLET_NOT_FOUND,
-        "User does not have a wallet.",
+        "Wallet not found.",
         404,
         true,
       );
@@ -144,7 +144,7 @@ export const tranferToWallet = async (
   if (!receiverWallet) {
     throw new AppError(
       ErrorCodes.WALLET_NOT_FOUND,
-      `Wallet with address - ${address} was not found.`,
+      `Recipient wallet not found.`,
       404,
       true,
     );

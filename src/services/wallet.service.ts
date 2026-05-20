@@ -37,7 +37,7 @@ export const getUserWallet = async (userId: number) => {
   if (!wallet)
     throw new AppError(
       ErrorCodes.WALLET_NOT_FOUND,
-      "Wallet not found..",
+      "Wallet not found.",
       404,
       true,
     );
@@ -61,7 +61,7 @@ export const depositFundsToWallet = async (
   if (!wallet)
     throw new AppError(
       ErrorCodes.WALLET_NOT_FOUND,
-      "Wallet not found..",
+      "Wallet not found.",
       404,
       true,
     );

@@ -17,7 +17,7 @@ export const createNewUser = async (
   fullname: string,
 ): Promise<void> => {
   // Users found in karma blacklist are not allowed to use this service.
-  const userIsClean = true; //await verifyKarmaIdentity(email);
+  const userIsClean = await verifyKarmaIdentity(email);
   if (!userIsClean)
     throw new AppError(
       ErrorCodes.USER_BLACKLISTED,

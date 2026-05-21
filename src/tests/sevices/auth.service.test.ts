@@ -24,10 +24,12 @@ vi.mock("../../services/verifyKarmaIdentity.js", () => ({
 import * as authService from "../../services/auth.service.js";
 import { generateAccessToken } from "../../utils/helpers.js";
 import AppError, { ErrorCodes } from "../../errors/appError.js";
+import verifyKarmaIdentity from "../../services/verifyKarmaIdentity.js";
 
 describe("Auth service tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (verifyKarmaIdentity as any).mockResolvedValue(true);
   });
 
   describe("Create new user func", () => {
@@ -65,6 +67,16 @@ describe("Auth service tests", () => {
       ).rejects.toMatchObject({
         message: "User already exists.",
         code: ErrorCodes.USER_ALREADY_EXISTS,
+      });
+    });
+
+    test("User blacklisted", async () => {
+      (verifyKarmaIdentity as any).mockResolvedValue(false);
+
+      await expect(
+        authService.createNewUser("hamnu@gmail.com", "Bulus Hamnu"),
+      ).rejects.toMatchObject({
+        code: ErrorCodes.USER_BLACKLISTED,
       });
     });
 
